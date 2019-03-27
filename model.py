@@ -61,7 +61,9 @@ def load_data():
 
 
 def create_generators(data, batch_size, validation_split=0.2, test_split=0.1):
+    np.random.seed(42)
     np.random.shuffle(data)
+    np.random.seed()
     test_idx = int((1 - test_split) * len(data))
     test_data = data[test_idx:]
     data = data[:test_idx]
@@ -83,10 +85,12 @@ def create_generators(data, batch_size, validation_split=0.2, test_split=0.1):
                 y = np.zeros((batch_size,))
             row = x_data[epoch_num]
             img_file = row['center']
-            steering = row['steering']
+            steering = float(row['steering'])
             img = cv2.imread('./data/' + img_file)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
             # img = cv2.resize(img, (66, 200))
+            if np.random.random() < 0.5:
+                img, steering = flip_image(img, steering)
             X[batch_num] = img
             y[batch_num] = steering
             batch_num += 1
@@ -113,8 +117,10 @@ if __name__ == '__main__':
     num_test_steps = create_generators(data, 10)
 
     if os.path.isfile('./model.h5'):
+        print('loading model from model.h5')
         model = load_model('./model.h5')
     else:
+        print('creating model')
         model = create_model()
         model.compile('adam', 'mse', ['accuracy'])
 
@@ -122,18 +128,18 @@ if __name__ == '__main__':
 
     history = model.fit_generator(
         training_generator,
-        # steps_per_epoch=num_training_steps,
-        steps_per_epoch=10,
+        steps_per_epoch=num_training_steps,
+#         steps_per_epoch=10,
         validation_data=validation_generator,
-        # validation_steps=num_validation_steps,
-        validation_steps=10,
-        epochs=1,
+        validation_steps=num_validation_steps,
+#         validation_steps=10,
+        epochs=20,
         verbose=1,
         )
 
     metrics = model.evaluate_generator(test_generator,
-        # steps=num_test_steps,
-        steps=10,
+        steps=num_test_steps,
+#         steps=10,
     )
 
     print(history)
