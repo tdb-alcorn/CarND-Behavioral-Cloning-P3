@@ -11,14 +11,16 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers import Lambda, Cropping2D
 
 
-# data_dir = './data/'
+data_dir = './data/'
 # data_dir = './run0/'
 # data_dir = './run1/'
 # data_dir = './run3/'
-data_dir = './run4/'
+# data_dir = './run4/'
 
 num_epochs = 5
-batch_size = 10
+batch_size = 30
+
+steering_correction = 0.2
 
 
 def create_model():
@@ -91,22 +93,27 @@ def create_generators(data, batch_size, validation_split=0.2, test_split=0.1):
         X = np.zeros((batch_size, 160, 320, 3))
         y = np.zeros((batch_size,))
         while True:
-            if batch_num == batch_size:
+            if batch_num >= batch_size:
                 yield X, y
                 batch_num = 0
                 X = np.zeros((batch_size, 160, 320, 3))
                 y = np.zeros((batch_size,))
             row = x_data[epoch_num]
-            img_file = '/'.join(row['center'].split('/')[-2:])
-            steering = float(row['steering'])
-            img = cv2.imread(data_dir + img_file)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
-            # img = cv2.resize(img, (66, 200))
-            if np.random.random() < 0.5:
-                img, steering = flip_image(img, steering)
-            X[batch_num] = img
-            y[batch_num] = steering
-            batch_num += 1
+            for img_type in ['center', 'left', 'right']:
+                img_file = '/'.join(row[img_type].split('/')[-2:]).strip()
+                steering = float(row['steering'])
+                if img_type == 'left':
+                    steering += steering_correction
+                if img_type == 'right':
+                    steering -= steering_correction
+                img = cv2.imread(data_dir + img_file)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+                # img = cv2.resize(img, (66, 200))
+                if np.random.random() < 0.5:
+                    img, steering = flip_image(img, steering)
+                X[batch_num] = img
+                y[batch_num] = steering
+                batch_num += 1
             epoch_num += 1
             epoch_num = epoch_num % num_samples
 
@@ -115,8 +122,8 @@ def create_generators(data, batch_size, validation_split=0.2, test_split=0.1):
     test_generator = gen(test_data)
 
     return training_generator, validation_generator, test_generator, \
-        len(training_data)//batch_size, len(validation_data)//batch_size, \
-        len(test_data)//batch_size
+        len(training_data)*3//batch_size, len(validation_data)*3//batch_size, \
+        len(test_data)*3//batch_size
 
 
 if __name__ == '__main__':
