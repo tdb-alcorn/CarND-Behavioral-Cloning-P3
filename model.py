@@ -14,6 +14,7 @@ from keras.layers import Lambda, Cropping2D
 data_dir = './data/'
 # data_dir = './run0/'
 # data_dir = './run1/'
+# data_dir = './run3/'
 
 num_epochs = 5
 batch_size = 10
@@ -54,14 +55,17 @@ def read_row(row, header):
 
 
 def load_data():
+    header = 'center,left,right,steering,throttle,brake,speed'.split(',')
     data = list()
     with open(data_dir + 'driving_log.csv', 'r') as f:
         reader = csv.reader(f)
         first = True
-        header = None
+#         header = None
         for row in reader:
             if first:
-                header = row
+                if row[0] != 'center':
+#                 header = row
+                    data.append(read_row(row, header))
                 first = False
             else:
                 data.append(read_row(row, header))
