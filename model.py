@@ -11,6 +11,14 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers import Lambda, Cropping2D
 
 
+data_dir = './data/'
+# data_dir = './run0/'
+# data_dir = './run1/'
+
+num_epochs = 5
+batch_size = 10
+
+
 def create_model():
     model = Sequential()
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160, 320, 3)))
@@ -47,7 +55,7 @@ def read_row(row, header):
 
 def load_data():
     data = list()
-    with open('./data/driving_log.csv', 'r') as f:
+    with open(data_dir + 'driving_log.csv', 'r') as f:
         reader = csv.reader(f)
         first = True
         header = None
@@ -84,9 +92,9 @@ def create_generators(data, batch_size, validation_split=0.2, test_split=0.1):
                 X = np.zeros((batch_size, 160, 320, 3))
                 y = np.zeros((batch_size,))
             row = x_data[epoch_num]
-            img_file = row['center']
+            img_file = '/'.join(row['center'].split('/')[-2:])
             steering = float(row['steering'])
-            img = cv2.imread('./data/' + img_file)
+            img = cv2.imread(data_dir + img_file)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
             # img = cv2.resize(img, (66, 200))
             if np.random.random() < 0.5:
@@ -114,7 +122,7 @@ if __name__ == '__main__':
     test_generator, \
     num_training_steps, \
     num_validation_steps, \
-    num_test_steps = create_generators(data, 10)
+    num_test_steps = create_generators(data, batch_size)
 
     if os.path.isfile('./model.h5'):
         print('loading model from model.h5')
@@ -133,7 +141,7 @@ if __name__ == '__main__':
         validation_data=validation_generator,
         validation_steps=num_validation_steps,
 #         validation_steps=10,
-        epochs=20,
+        epochs=num_epochs,
         verbose=1,
         )
 
