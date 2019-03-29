@@ -11,10 +11,11 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers import Lambda, Cropping2D
 
 
-data_dir = './data/'
+# data_dir = './data/'
 # data_dir = './run0/'
 # data_dir = './run1/'
 # data_dir = './run3/'
+data_dir = './run4/'
 
 num_epochs = 5
 batch_size = 10
